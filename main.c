@@ -195,9 +195,7 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
     
     // For the duration, try to run the FIFO
     while(countdown <= info.runfor){
-        
-        printf("%d\n", array[i].arrival);
-        
+                
         if(array[i].arrival == countdown){
             fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
             i++;
