@@ -50,8 +50,7 @@ int main(int argc, const char * argv[]) {
     // sort the array of processes
     quickSort(array, size);
     
-     for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
-    
+    //for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
     
     switch(info.use){
         case 1:
@@ -194,8 +193,6 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
     
     // For the duration, try to run the FIFO
     while(countdown <= info.runfor){
-        
-        printf("Time: %d | Burst left: %d | Current: %d\n", countdown, array[current].burst, current);
         
         if(array[i].arrival == countdown){
             fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
