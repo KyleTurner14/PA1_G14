@@ -112,9 +112,11 @@ information readInput(FILE*input, processes*array, int*size){
             } else if(strcmp(use, "rr") == 0){
                 info.use = 3;
                 
+                fscanf(input, "%[^\n]", strBuild);
+                fscanf(input, "%s", strBuild);
+                
                 // get the quantum size
                 fscanf(input, "%d", &info.quantnum);
-                
             }
         
         // get info for each process
@@ -256,6 +258,7 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size){
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
+    
     
 }
 
