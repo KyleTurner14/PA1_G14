@@ -50,7 +50,7 @@ int main(int argc, const char * argv[]) {
     // sort the array of processes
     quickSort(array, size);
     
-    //for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
+    for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
     
     switch(info.use){
         case 1:
@@ -188,13 +188,15 @@ void quickSort(processes*array, int size){
 // Implementation of first first come first serve, outputs to processes.out
 void firstComeFirstServe(FILE*output, information info, processes*array, int size){
     
-    int i = 0, j = 0, countdown = 0, runningSomething = 0, current = 0;
+    int i = 0, countdown = 0, runningSomething = 0, current = 0;
     
     // Print Header
     fprintf(output, "%d processes\nUsing First-Come First-Served\n\n", info.processCount);
     
     // For the duration, try to run the FIFO
     while(countdown <= info.runfor){
+        
+        printf("%d\n", array[i].arrival);
         
         if(array[i].arrival == countdown){
             fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
@@ -203,7 +205,7 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
         }
         
         // Say this process is running now
-        if(array[current].run == 0 && runningSomething == 0){
+        if(array[current].arrival <= countdown && array[current].run == 0 && runningSomething == 0){
             fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
             runningSomething   = 1;
             array[current].run = 1;
@@ -214,13 +216,14 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
             // calculate the turnaround time
             array[current].turnaround = array[current].waitTime + array[current].burst;
             
-            
         }
         
-        array[current].burst = array[current].burst - 1;
+        // decrement the burst length of the running process
+        if(array[current].arrival <= countdown) array[current].burst = array[current].burst - 1;
+    
         countdown++;
         
-        // if we finish early
+        // check if we finish early
         if(array[size-1].burst == 0 && countdown <= info.runfor){
             fprintf(output, "Finished at time %d\n\n", countdown);
             
@@ -234,7 +237,7 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
         } else if(runningSomething == 0){
             fprintf(output, "Time %d: Idle\n", countdown);
             
-        // rest the current process running because this on is finished
+        // reset the current process running because this on is finished
         } else if(array[current].burst == 0){
             fprintf(output, "Time %d: %s Finished\n", countdown, array[current].name);
             
@@ -258,7 +261,6 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size){
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-    
     
 }
 
