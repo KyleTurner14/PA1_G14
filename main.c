@@ -48,19 +48,22 @@ int main(int argc, const char * argv[]) {
     processes array[1000];
     information info = readInput(input, array, &size);
     
-    // sort the array of processes
-    quickSort(array, size);
+    
     
     //for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
     
     switch(info.use){
         case 1:
+        	// sort the array of processes
+  			quickSort(array, size);
             firstComeFirstServe(output, info, array, size);
             break;
         case 2:
             shortestJobFirst(output, info, array, size);
             break;
         case 3:
+        	// sort the array of processes
+  			quickSort(array, size);
             roundRobin(output, info, array, size);
             break;
         default:
@@ -266,7 +269,9 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size)
 	
 	// keep track of time and run until time completed
 	for( timer = 0; timer < info.runfor; timer++ )
-		time[ timer ] = helper_reportWinner( output, info, array, timer, time[ timer - 1 ] );
+	{
+		time[ timer ] = helper_reportWinner( output, info, array, timer, ( (timer - 1 >= 0) ? time[ timer - 1 ] : INT_MIN ) );
+	}
 		
 	//footer
 	fprintf(output, "Finished at time %d\n\n", timer );
@@ -284,19 +289,19 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 	//Created by John Millner
 	
 	// who can run (arrival time)
-	// who can run completly before time runs out
+	// who still has stuff to run
 	// who has the shortest runtime
 	
 	int processIndex = -1; 		// -1 represents IDLE, if not winner, default IDLE
 	int burstWinner = INT_MAX; 	// holder for shortest burst time
 	
 	int i;
-	for( i = 0; i < info.processCount; i ++ )
+	for( i = 0; i < info.processCount; i++ )
 	{
 		// check if process is available to run
 		if( array[ i ].arrival <= timer )
 		{
-			//if the process is fresh off the boat - make note!
+			// make note if the process is fresh off the boat 
 			if( array[ i ].arrival == timer)
 				fprintf(output, "Time %d: %s arrived\n", timer, array[ i ].name);
 				
@@ -310,10 +315,6 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 					processIndex = i;
 					burstWinner = array[ i ].burst;
 				}
-				else // this processs has lost to a shorter job, so incrememt wait timer
-				{
-					array[ i ].waitTime++;
-				}
 			}
 			else // process has just completed!
 			{
@@ -323,16 +324,23 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 			}
 		}				
 	}
-	
-	//make note if this process IDLE or was freshly selected
+
+	// make note if this process IDLE or was freshly selected
 	if( processIndex == -1 )
 		fprintf(output, "Time %d: IDLE\n", timer);	
-	else if( processIndex != oldWinner )
+	else 
 	{
-		array[i].burst--; // decrement burst since work has been done
-		fprintf(output, "Time %d: %s selected (burst %d)\n", timer, array[ processIndex ].name, array[ processIndex ].burst);
+		// set losing process's waitTime's
+		for( i = 0; i < info.processCount; i++ )
+			if( i != processIndex && array[ i ].arrival <= timer )
+				array[ i ].waitTime++;
+				
+		// make note if the selected process is different from previous process  
+		if( processIndex != oldWinner )
+			fprintf(output, "Time %d: %s selected (burst %d)\n", timer, array[ processIndex ].name, array[ processIndex ].burst);
+		array[ processIndex ].burst--; // decrement burst since work has been done
 	}
-	
+
 	return processIndex;
 }
 
