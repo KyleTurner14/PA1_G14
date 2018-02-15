@@ -275,11 +275,8 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size)
 		
 	//footer
 	fprintf(output, "Finished at time %d\n\n", timer );
-	int i;
-	for( i = 0; i < info.processCount; i ++ )
-	{
-		fprintf( output, "%s wait %d turnaround %d\n", array[ i ].name, array[ i ].waitTime, array[ i ].turnaround); 
-	}  
+	
+	printWaitTimes( output, array, size );
 }
 
 // returns the process that "wins" the time slot for P-SJF
