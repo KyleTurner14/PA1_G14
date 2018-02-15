@@ -379,7 +379,7 @@ int processCounter2 = 0;
                 countdown--;
             }
 
-            //new arrival and burst less than quantum
+            //old arrival and burst less than quantum
             if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 &&array[current].burst<info.quantnum ){
              countdown = countdown + info.quantnum;
              fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
@@ -394,7 +394,7 @@ int processCounter2 = 0;
              }
 
 
-            //new arrival and burst is greater than quantum
+            //old arrival and burst is greater than quantum
             if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 && array[current].burst>info.quantnum ){
                  fprintf(output, "Time %d: %s selected (burst %d)\n", countdown + info.quantnum, array[current].name, array[current].burst);
                 array[current].burst = array[current].burst - info.quantnum;
