@@ -252,8 +252,10 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
 
 
 // Implementation of shortest job first, outputs to processes.out
-void shortestJobFirst(FILE*output, information info, processes*array, int size){
-    
+void shortestJobFirst(FILE*output, information info, processes*array, int size)
+{
+	//Created by John Millner
+	//test    
 }
 
 
