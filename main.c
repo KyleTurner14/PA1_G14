@@ -342,9 +342,96 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 }
 
 // Implementation of round robin, outputs to processes.out
+// Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-    
-}
+
+int i = 0, j = 0, runningSomething = 0, countdown = 0, current = 0, newArrival = 0, processCounter = 0;
+int processCounter2 = 0;
+
+    //pre-fetched data
+    fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
+
+    while(countdown <= info.runfor){
+
+            //arrive time
+            if(array[i].arrival == countdown){
+            fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
+            array[current].run = 1;
+            newArrival = 1;
+            i++;
+            }
+            //not running anything
+            if(countdown >= array[current].arrival && runningSomething == 0){
+                array[current].run = 1;
+                runningSomething = 1;
+                newArrival = 0;
+                fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
+                array[current].burst = array[current].burst - info.quantnum;
+            }
+
+              //new arrival
+              if(countdown >=array[current].arrival && runningSomething == 1  && array[current].run == 1 && newArrival == 1 ){
+                countdown++;
+                fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
+                newArrival = 0;
+                array[current].burst = array[current].burst - info.quantnum;
+                current = current + 1;
+                countdown--;
+            }
+
+            //new arrival and burst less than quantum
+            if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 &&array[current].burst<info.quantnum ){
+             countdown = countdown + info.quantnum;
+             fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
+             array[current].run = 0;
+             fprintf(output, "Time %d: %s Finished\n", countdown + array[current].burst, array[current].name);
+             array[current].turnaround = (countdown + array[current].burst)-array[current].arrival;
+             processCounter++;
+             current = current + 1;
+             array[current].burst = 0;
+             countdown = countdown - info.quantnum;
+
+             }
+
+
+            //new arrival and burst is greater than quantum
+            if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 && array[current].burst>info.quantnum ){
+                 fprintf(output, "Time %d: %s selected (burst %d)\n", countdown + info.quantnum, array[current].name, array[current].burst);
+                array[current].burst = array[current].burst - info.quantnum;
+                current = current + 1;
+                countdown = (countdown + info.quantnum) - 1;
+            }
+
+
+	    //if reach max loop around
+            if(current == info.processCount){
+                current = 0;
+            }
+
+	    //next instruction
+            countdown++;
+
+	    //idle
+            if(processCounter==info.processCount && countdown <= info.runfor - info.quantnum){
+            countdown = countdown + info.quantnum;
+            fprintf(output, "Time %d: Idle\n", countdown);
+            }
+
+	    //finished or finished early
+            if(array[size-1].burst == 0 && countdown <= info.runfor){
+            countdown = countdown + 1;
+            fprintf(output, "Finished at time %d\n\n", countdown);
+
+            // print the wait times
+            printWaitTimes(output, array, size);
+
+            // go back to main
+            return;
+        }
+  }// end while;
+
+
+}//end functionality
 
 
 // function to print wait times so we don't have to all write it in our functions
