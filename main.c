@@ -30,11 +30,15 @@ typedef struct {
 
 // function prototypes
 information readInput(FILE*input, processes*array, int*size);
+
 void quickSort(processes*array, int size);
+void sortByName(processes*array, int size);
 void firstComeFirstServe(FILE*output, information info, processes*array, int size);
 void shortestJobFirst(FILE*output, information info, processes*array, int size);
 void roundRobin(FILE*output, information info, processes*array, int size);
 void printWaitTimes(FILE*output, processes*array, int size);
+
+int helper_reportWinner( FILE*output, information info, processes* array, int timer, int oldWinner );
 
 int main(int argc, const char * argv[]) {
     
@@ -48,22 +52,20 @@ int main(int argc, const char * argv[]) {
     processes array[1000];
     information info = readInput(input, array, &size);
     
-    
-    
     //for(int i = 0; i < size; i++) printf("%s | %d | %d\n", array[i].name, array[i].arrival, array[i].burst);
     
     switch(info.use){
         case 1:
-        	// sort the array of processes
-  			quickSort(array, size);
+            // sort the array of processes
+            quickSort(array, size);
             firstComeFirstServe(output, info, array, size);
             break;
         case 2:
             shortestJobFirst(output, info, array, size);
             break;
         case 3:
-        	// sort the array of processes
-  			quickSort(array, size);
+            // sort the array of processes
+            quickSort(array, size);
             roundRobin(output, info, array, size);
             break;
         default:
@@ -95,15 +97,15 @@ information readInput(FILE*input, processes*array, int*size){
             fscanf(input, "%[^\n]", strBuild);
             continue;
             
-        // store the process count
+            // store the process count
         } else if(strcmp(strBuild, "processcount") == 0){
             fscanf(input, "%d", &info.processCount);
-
-        // store the runfor duration
+            
+            // store the runfor duration
         } else if(strcmp(strBuild, "runfor") == 0){
             fscanf(input, "%d", &info.runfor);
             
-        // get the use (fcfs = 1/sjf = 2/rr = 3)
+            // get the use (fcfs = 1/sjf = 2/rr = 3)
         } else if(strcmp(strBuild, "use") == 0){
             fscanf(input, "%s", use);
             
@@ -122,14 +124,14 @@ information readInput(FILE*input, processes*array, int*size){
                 // get the quantum size
                 fscanf(input, "%d", &info.quantnum);
             }
-        
-        // get info for each process
+            
+            // get info for each process
         } else if(strcmp(strBuild, "process") == 0){
             
             // get the name
             fscanf(input, "%s", strBuild);
             fscanf(input, "%s", array[i].name);
-
+            
             // get arrival time
             fscanf(input, "%s", strBuild);
             fscanf(input, "%d", &array[i].arrival);
@@ -222,7 +224,7 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
         
         // decrement the burst length of the running process
         if(array[current].arrival <= countdown) array[current].burst = array[current].burst - 1;
-    
+        
         countdown++;
         
         // check if we finish early
@@ -235,11 +237,11 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
             // go back to main
             return;
             
-        // check for idle
+            // check for idle
         } else if(runningSomething == 0){
-            fprintf(output, "Time %d: IDLE\n", countdown);
+            fprintf(output, "Time %d: idle\n", countdown);
             
-        // reset the current process running because this on is finished
+            // reset the current process running because this on is finished
         } else if(array[current].burst == 0){
             fprintf(output, "Time %d: %s Finished\n", countdown, array[current].name);
             
@@ -258,162 +260,160 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
 // Implementation of shortest job first, outputs to processes.out
 // HANDLES HEADER & FOOTER
 void shortestJobFirst(FILE*output, information info, processes*array, int size)
-{ 
-	// Created by John Millner
-	
-	// Print Header
+{
+    // Created by John Millner
+    
+    // Print Header
     fprintf(output, "%d processes\nUsing Shortest Job First (Pre) \n\n", info.processCount);
-	
-	int timer 	= 0;					// descibes current time
-	int time 	[ info.runfor ];		// descibes timeline 
-	
-	// keep track of time and run until time completed
-	for( timer = 0; timer < info.runfor; timer++ )
-	{
-		time[ timer ] = helper_reportWinner( output, info, array, timer, ( (timer - 1 >= 0) ? time[ timer - 1 ] : INT_MIN ) );
-	}
-		
-	//footer
-	fprintf(output, "Finished at time %d\n\n", timer );
-	
-	printWaitTimes( output, array, size );
+    
+    int timer     = 0;                    // descibes current time
+    int time     [ info.runfor ];        // descibes timeline
+    
+    // keep track of time and run until time completed
+    for( timer = 0; timer < info.runfor; timer++ )
+    {
+        time[ timer ] = helper_reportWinner( output, info, array, timer, ( (timer - 1 >= 0) ? time[ timer - 1 ] : INT_MIN ) );
+    }
+    
+    //footer
+    fprintf(output, "Finished at time %d\n\n", timer );
+    
+    printWaitTimes( output, array, size );
 }
 
 // returns the process that "wins" the time slot for P-SJF
 // HANDLES PRINTING OF SELECTION, IDLE, ARRIVED AND FINISHED
 int helper_reportWinner( FILE*output, information info, processes* array, int timer, int oldWinner )
 {
-	//Created by John Millner
-	
-	// who can run (arrival time)
-	// who still has stuff to run
-	// who has the shortest runtime
-	
-	int processIndex = -1; 		// -1 represents IDLE, if not winner, default IDLE
-	int burstWinner = INT_MAX; 	// holder for shortest burst time
-	
-	int i;
-	for( i = 0; i < info.processCount; i++ )
-	{
-		// check if process is available to run
-		if( array[ i ].arrival <= timer )
-		{
-			// make note if the process is fresh off the boat 
-			if( array[ i ].arrival == timer)
-				fprintf(output, "Time %d: %s arrived\n", timer, array[ i ].name);
-				
-				
-			// check if this process still has work to do
-			if( array[ i ].burst > 0 )
-			{
-				// check if this process has the smallest burst time
-				if( array[ i ].burst < burstWinner )
-				{
-					processIndex = i;
-					burstWinner = array[ i ].burst;
-				}
-			}
-			else // process has just completed!
-			{
-				array[ i ].turnaround = timer - array[ i ].arrival; //set turnaround time
-				array[ i ].arrival = INT_MAX; // lets not crunch numbers if we dont have to
-      			fprintf(output, "Time %d: %s Finished\n", timer, array[ i ].name);
-			}
-		}				
-	}
-
-	// make note if this process IDLE or was freshly selected
-	if( processIndex == -1 )
-		fprintf(output, "Time %d: IDLE\n", timer);	
-	else 
-	{
-		// set losing process's waitTime's
-		for( i = 0; i < info.processCount; i++ )
-			if( i != processIndex && array[ i ].arrival <= timer )
-				array[ i ].waitTime++;
-				
-		// make note if the selected process is different from previous process  
-		if( processIndex != oldWinner )
-			fprintf(output, "Time %d: %s selected (burst %d)\n", timer, array[ processIndex ].name, array[ processIndex ].burst);
-		array[ processIndex ].burst--; // decrement burst since work has been done
-	}
-
-	return processIndex;
+    //Created by John Millner
+    
+    // who can run (arrival time)
+    // who still has stuff to run
+    // who has the shortest runtime
+    
+    int processIndex = -1;         // -1 represents IDLE, if not winner, default IDLE
+    int burstWinner = INT_MAX;     // holder for shortest burst time
+    
+    int i;
+    for( i = 0; i < info.processCount; i++ )
+    {
+        // check if process is available to run
+        if( array[ i ].arrival <= timer )
+        {
+            // make note if the process is fresh off the boat
+            if( array[ i ].arrival == timer)
+                fprintf(output, "Time %d: %s arrived\n", timer, array[ i ].name);
+            
+            
+            // check if this process still has work to do
+            if( array[ i ].burst > 0 )
+            {
+                // check if this process has the smallest burst time
+                if( array[ i ].burst < burstWinner )
+                {
+                    processIndex = i;
+                    burstWinner = array[ i ].burst;
+                }
+            }
+            else // process has just completed!
+            {
+                array[ i ].turnaround = timer - array[ i ].arrival; //set turnaround time
+                array[ i ].arrival = INT_MAX; // lets not crunch numbers if we dont have to
+                fprintf(output, "Time %d: %s Finished\n", timer, array[ i ].name);
+            }
+        }
+    }
+    
+    // make note if this process IDLE or was freshly selected
+    if( processIndex == -1 )
+        fprintf(output, "Time %d: idle\n", timer);
+    else
+    {
+        // set losing process's waitTime's
+        for( i = 0; i < info.processCount; i++ )
+            if( i != processIndex && array[ i ].arrival <= timer )
+                array[ i ].waitTime++;
+        
+        // make note if the selected process is different from previous process
+        if( processIndex != oldWinner )
+            fprintf(output, "Time %d: %s selected (burst %d)\n", timer, array[ processIndex ].name, array[ processIndex ].burst);
+        array[ processIndex ].burst--; // decrement burst since work has been done
+    }
+    
+    return processIndex;
 }
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-int i=0,j=0, executionTime, counter, idleToggle = 0, flag = 0;
-
+    int i=0,j=0, executionTime = 0, counter = 0, idleToggle = 0, flag = 0;
+    
     //pre-fetched data
     fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
-
+    
     while(executionTime <= info.runfor){
-
-
-    for(i=0;i<info.processCount;i++){
-     //arrival of processes
-      if(array[i].arrival == executionTime && array[i].run == 0 && counter != info.processCount){
-            counter++;
-            fprintf(output, "Time %d: %s arrived\n", executionTime, array[j].name);
-            array[i].run = 1;
-            if(counter==1){
-            fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-            }
-            else{
-            executionTime++;
-            fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-            }
-      }
-    }
-         //if processes are running
-     for(i=0;i<info.processCount;i++){
-        //if process is running and burst is greater then quantum
-        if(array[i].run == 1 && array[i].burst > info.quantnum){
-        executionTime = executionTime + info.quantnum;
-        array[i].burst = array[i].burst - info.quantnum;
-        fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-        }
         
-        //if less then finish it up.
-        if(array[i].burst<=info.quantnum && array[i].run == 1){
-                executionTime = executionTime + array[i].burst;
-            fprintf(output, "Time %d: %s finished\n", executionTime, array[i].name);
-            array[i].turnaround = executionTime - array[i].arrival;
-            array[i].run = 0;
-            flag = 1;
+        
+        for(i=0;i<info.processCount;i++){
+            //arrival of processes
+            if(array[i].arrival == executionTime && array[i].run == 0 && counter != info.processCount){
+                counter++;
+                fprintf(output, "Time %d: %s arrived\n", executionTime, array[j].name);
+                array[i].run = 1;
+                if(counter==1){
+                    fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+                }
+                else{
+                    executionTime++;
+                    fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+                }
+            }
         }
-
-
-    }
-    //toggle the idle if the last process in list is empty, doesn't look right...
-    if(counter == info.processCount && array[info.quantnum-1].burst == 0){
-        fprintf(output, "Time %d: Idle\n");
-        idleToggle = 1;
-    }
-//kind of don't understand why i needed this trying to figure a way around it.
-    if(counter>=info.quantnum){
+        //if processes are running
+        for(i=0;i<info.processCount;i++){
+            //if process is running and burst is greater then quantum
+            if(array[i].run == 1 && array[i].burst > info.quantnum){
+                executionTime = executionTime + info.quantnum;
+                array[i].burst = array[i].burst - info.quantnum;
+                fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+            }
+            
+            //if less then finish it up.
+            if(array[i].burst<=info.quantnum && array[i].run == 1){
+                executionTime = executionTime + array[i].burst;
+                fprintf(output, "Time %d: %s finished\n", executionTime, array[i].name);
+                array[i].turnaround = executionTime - array[i].arrival;
+                array[i].run = 0;
+                flag = 1;
+            }
+            
+            
+        }
+        //toggle the idle if the last process in list is empty, doesn't look right...
+        if(counter == info.processCount && array[info.quantnum-1].burst == 0){
+            fprintf(output, "Time %d: Idle\n", executionTime);
+            idleToggle = 1;
+        }
+        //kind of don't understand why i needed this trying to figure a way around it.
+        if(counter>=info.quantnum){
             executionTime--;
         }
         
-//next instruction
-    executionTime++;
-
-    //if execution time is hit or idle is toggled..then end
-    if(idleToggle == 1 || executionTime >= info.runfor){
+        
+        //next instruction
+        executionTime++;
+        
+        //if execution time is hit or idle is toggled..then end
+        if(idleToggle == 1 || executionTime >= info.runfor){
             fprintf(output, "Finished at time %d\n\n", executionTime);
-
+            
             // print the wait times
             printWaitTimes(output, array, size);
-
+            
             // go back to main
             return;
-    }
-
-
-
-
-  }// end while;
+        }
+        
+    }// end while;
 }//end functionality
 
 
@@ -421,7 +421,50 @@ int i=0,j=0, executionTime, counter, idleToggle = 0, flag = 0;
 void printWaitTimes(FILE*output, processes*array, int size){
     int i = 0;
     
+    sortByName(array, size);
+    
     for(i = 0; i < size; i++){
         fprintf(output, "%s wait %d turnaround %d\n", array[i].name, array[i].waitTime, array[i].turnaround);
     }
+}
+
+
+// function to get the processes in aplhabetical order prior to printing
+void sortByName(processes*array, int size){
+    
+    int i = 0, j = 0;
+    
+    // for an array of size 1, return because there's no point of sorting
+    if(size < 2) return;
+    
+    char pivot[20];
+    strcpy(pivot, array[size/2].name);
+    
+    for(i = 0, j = size - 1; ; i++, j--){
+        while(strcmp(array[i].name, pivot) < 0) i++;
+        while(strcmp(array[j].name, pivot) > 0) j--;
+        
+        if(i >= j) break;
+        
+        // swap around
+        processes temp;
+        
+        temp.turnaround = array[i].turnaround;
+        temp.waitTime   = array[i].waitTime;
+        strcpy(temp.name, array[i].name);
+        
+        array[i].turnaround = array[j].turnaround;
+        array[i].waitTime   = array[j].waitTime;
+        strcpy(array[i].name, array[j].name);
+        
+        array[j].turnaround = temp.turnaround;
+        array[j].waitTime   = temp.waitTime;
+        strcpy(array[j].name, temp.name);
+        
+    }
+    
+    // recursive calls
+    sortByName(array, i);
+    sortByName(array + i, size - i);
+    
 }
