@@ -345,89 +345,112 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
 
-int i = 0, j = 0, runningSomething = 0, countdown = 0, current = 0, newArrival = 0, processCounter = 0;
-int processCounter2 = 0;
-
+int i = 0, j = 0, runningSomething = 0, instruction = 0, current = 0, newArrival = 0, processCounter = 0;
+int idleToggle = 0;
+	
     //pre-fetched data
     fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
 
-    while(countdown <= info.runfor){
+    while(instruction <= info.runfor){
 
-            //arrive time
-            if(array[i].arrival == countdown){
-            fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
-            array[current].run = 1;
+            //arriving inbound
+            if(array[i].arrival == instruction){
+            fprintf(output, "Time %d: %s arrived\n", instruction, array[i].name);
             newArrival = 1;
             i++;
             }
-            //not running anything
-            if(countdown >= array[current].arrival && runningSomething == 0){
-                array[current].run = 1;
-                runningSomething = 1;
-                newArrival = 0;
-                fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
-                array[current].burst = array[current].burst - info.quantnum;
+
+
+
+            //processArrived but nothing is running yet.
+            if(newArrival == 1 && runningSomething == 0 ){
+            fprintf(output, "Time %d: %s selected (burst %d)\n", instruction, array[current].name, array[current].burst);
+            newArrival = 0;
+            runningSomething = 1;
+            array[current].run = 1;
+
             }
 
-              //new arrival
-              if(countdown >=array[current].arrival && runningSomething == 1  && array[current].run == 1 && newArrival == 1 ){
-                countdown++;
-                fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
-                newArrival = 0;
-                array[current].burst = array[current].burst - info.quantnum;
+
+            //new arrival and something is running.
+            if(newArrival==1 && array[current].run == 0 && runningSomething==1){
+            instruction = instruction + 1;
+            fprintf(output, "Time %d: %s selected (burst %d)\n", instruction, array[current].name, array[current].burst);
+            array[current].run = 1;
+            newArrival = 0;
+             if(current  != info.processCount){
                 current = current + 1;
-                countdown--;
+             }
+             if(current == info.processCount){
+                current = 0;
+             }
             }
 
-            //old arrival and burst less than quantum
-            if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 &&array[current].burst<info.quantnum ){
-             countdown = countdown + info.quantnum;
-             fprintf(output, "Time %d: %s selected (burst %d)\n", countdown, array[current].name, array[current].burst);
-             array[current].run = 0;
-             fprintf(output, "Time %d: %s Finished\n", countdown + array[current].burst, array[current].name);
-             array[current].turnaround = (countdown + array[current].burst)-array[current].arrival;
-             processCounter++;
-             current = current + 1;
-             array[current].burst = 0;
-             countdown = countdown - info.quantnum;
-
+            //not a new arrival and process is ending.
+             if(newArrival == 0 && runningSomething == 1 && array[current].run==1 && array[current].burst <= info.quantnum && array[current].burst != 0 ){
+             instruction++;
+             instruction = instruction + array[current].burst;
+             array[current].burst = array[current].burst - array[current].burst;
+             fprintf(output, "Time %d: %s finished\n", instruction, array[current].name);
+             instruction--;
+             if(current  != info.processCount){
+                current = current + 1;
+             }
+             if(current == info.processCount){
+                current = 0;
+             }
              }
 
 
-            //old arrival and burst is greater than quantum
-            if(countdown >=array[current].arrival && runningSomething == 1   && array[current].run == 1 && newArrival == 0 && array[current].burst>info.quantnum ){
-                 fprintf(output, "Time %d: %s selected (burst %d)\n", countdown + info.quantnum, array[current].name, array[current].burst);
-                array[current].burst = array[current].burst - info.quantnum;
+            //not a new arrival and process is now running
+             if(newArrival == 0 && runningSomething == 1 && array[current].run==1 && array[current].burst > info.quantnum ){
+             instruction = instruction + info.quantnum;
+             array[current].burst = array[current].burst - info.quantnum;
+             fprintf(output, "Time %d: %s selected (burst %d)\n", instruction, array[current].name, array[current].burst);
+
+
+             //finishing a process & adds counter for when all processes have gone through.
+             if(array[current].burst <= info.quantnum){
+                instruction = instruction + array[current].burst;
+                fprintf(output, "Time %d: %s Finished\n", instruction, array[current].name);
+                array[current].turnaround = instruction - array[current].arrival;
+                array[current].burst = 0;
+                array[current].run= 0;
+                instruction = instruction - info.quantnum;
+                processCounter++;
+             }
+	     //balances instruction at bottom.
+             instruction--;
+		     
+	     //loops. 
+             if(current  != info.processCount){
                 current = current + 1;
-                countdown = (countdown + info.quantnum) - 1;
-            }
-
-
-	    //if reach max loop around
-            if(current == info.processCount){
+             }
+             if(current == info.processCount){
                 current = 0;
-            }
-
-	    //next instruction
-            countdown++;
-
-	    //idle
-            if(processCounter==info.processCount && countdown <= info.runfor - info.quantnum){
-            countdown = countdown + info.quantnum;
-            fprintf(output, "Time %d: Idle\n", countdown);
-            }
-
-	    //finished or finished early
-            if(array[size-1].burst == 0 && countdown <= info.runfor){
-            countdown = countdown + 1;
-            fprintf(output, "Finished at time %d\n\n", countdown);
+             }
+		     
+             }//end if
+	    
+	    //its idle or process is ended.
+            if(idleToggle == 1 || instruction == info.runfor){
+               fprintf(output, "Finished at time %d\n\n", instruction);
 
             // print the wait times
             printWaitTimes(output, array, size);
 
             // go back to main
             return;
-        }
+            }
+
+	    //if process is idle --> adds 1 and info because they were subtracted previously.
+            if(processCounter==2 && (instruction + 1 + info.quantnum) <=info.runfor){
+                instruction = instruction + 1 + info.quantnum;
+                fprintf(output, "Time %d: Idle\n", instruction);
+                idleToggle = 1;
+            }
+
+            instruction++;
   }// end while;
 
 
