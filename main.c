@@ -349,76 +349,85 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-    int i=0,j=0, executionTime = 0, counter = 0, idleToggle = 0, flag = 0;
-    
+int i = 0, j = 0,runningSomething = 0, executionTime = 0, processCounter = 0, idleToggle = 0;
+int cpyBurst[info.processCount];
+
     //pre-fetched data
     fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
-    
+
+for(j=0; j<info.processCount; j++){
+    cpyBurst[j] = array[j].burst;
+}
+
+
+    //while executing
     while(executionTime <= info.runfor){
-        
-        
-        for(i=0;i<info.processCount;i++){
-            //arrival of processes
-            if(array[i].arrival == executionTime && array[i].run == 0 && counter != info.processCount){
-                counter++;
-                fprintf(output, "Time %d: %s arrived\n", executionTime, array[j].name);
-                array[i].run = 1;
-                if(counter==1){
-                    fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-                }
-                else{
-                    executionTime++;
-                    fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-                }
-            }
-        }
-        //if processes are running
-        for(i=0;i<info.processCount;i++){
-            //if process is running and burst is greater then quantum
-            if(array[i].run == 1 && array[i].burst > info.quantnum){
-                executionTime = executionTime + info.quantnum;
-                array[i].burst = array[i].burst - info.quantnum;
-                fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
-            }
-            
-            //if less then finish it up.
-            if(array[i].burst<=info.quantnum && array[i].run == 1){
-                executionTime = executionTime + array[i].burst;
-                fprintf(output, "Time %d: %s finished\n", executionTime, array[i].name);
-                array[i].turnaround = executionTime - array[i].arrival;
-                array[i].run = 0;
-                flag = 1;
-            }
-            
-            
-        }
-        //toggle the idle if the last process in list is empty, doesn't look right...
-        if(counter == info.processCount && array[info.quantnum-1].burst == 0){
-            fprintf(output, "Time %d: Idle\n", executionTime);
-            idleToggle = 1;
-        }
-        //kind of don't understand why i needed this trying to figure a way around it.
-        if(counter>=info.quantnum){
-            executionTime--;
-        }
-        
-        
-        //next instruction
-        executionTime++;
-        
-        //if execution time is hit or idle is toggled..then end
-        if(idleToggle == 1 || executionTime >= info.runfor){
-            fprintf(output, "Finished at time %d\n\n", executionTime);
-            
-            // print the wait times
-            printWaitTimes(output, array, size);
-            
-            // go back to main
-            return;
-        }
-        
-    }// end while;
+    runningSomething = 0;
+    for(i=0;i<info.processCount;i++){
+
+    if(array[i].arrival == executionTime){
+        fprintf(output, "Time %d: %s arrived\n", executionTime, array[i].name);
+    }
+
+    if(array[i].arrival <= executionTime && array[i].run == 0 && array[i].burst != 0){
+   //  fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+     array[i].run = 1;
+     runningSomething = 1;
+    }
+
+    if(array[i].burst <= info.quantnum && array[i].run == 1){
+    fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[i].name, array[i].burst );
+    executionTime = executionTime + array[i].burst;
+    array[i].burst = 0;
+    fprintf(output, "Time %d: %s finished.\n",executionTime, array[i].name, array[i].burst );
+    array[i].turnaround = executionTime - array[i].arrival;
+    array[i].waitTime = array[i].turnaround - cpyBurst[i];
+    array[i].run = 0;
+    processCounter++;
+    if(processCounter == info.processCount){
+        runningSomething = 0;
+    }
+    }
+
+
+    //if a process is running and still has a burst in order take quantnum away
+    if(array[i].run == 1 && array[i].burst > info.quantnum){
+     fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+     array[i].burst = array[i].burst - info.quantnum;
+     executionTime = executionTime + info.quantnum;
+     runningSomething = 1;
+    }
+
+//if idle
+if(idleToggle == 1){
+fprintf(output, "Finished at time %d\n\n", executionTime);
+
+ // print the wait times
+ printWaitTimes(output, array, size);
+
+  // go back to main
+  return;
+
+}
+
+
+//figure out if idle
+if( processCounter==info.processCount  && executionTime < info.runfor){
+fprintf(output, "Time %d: Idle\n", executionTime);
+runningSomething = 0;
+idleToggle = 1;
+}
+
+
+
+if(runningSomething != 1){
+executionTime++;
+}
+
+    }
+    }//end time count
 }//end functionality
+
 
 
 // function to print wait times so we don't have to all write it in our functions
