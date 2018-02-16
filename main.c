@@ -343,135 +343,77 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-
-// Implementation of round robin, outputs to processes.out
-void roundRobin(FILE*output, information info, processes*array, int size){
-int i = 0,j = 0, runningSomething = 0, shortGrab = 0,newArrival = 0, executionTime = 0, current = 0, counter = 0, processTracker = 0;
-int vals[info.quantnum], switchtoNext = 0, idleToggle = 0;
+int i=0,j=0, executionTime, counter, idleToggle = 0, flag = 0;
 
     //pre-fetched data
     fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
 
-    //stack a copy of burst times.
-    for(j=0;j<info.processCount;j++){
-        vals[j]=array[j].burst;
-    }
-    //sort them in orderb
-
-    //while executing
-    while(executionTime < info.runfor){
-
-    //if a new process arrives current becomes that process and the run variable is on.
-    for(i=0; i<info.processCount;i++){
-         if(array[i].arrival==executionTime){
-         fprintf(output, "Time %d: %s arrived\n",executionTime, array[i].name );
-         array[i].run = 1;
-         current = i;
-         //if new arrival tick 1
-         if(counter > 0){
-
-            newArrival = 1;
-         }
-          counter++;
-         }
-    }
+    while(executionTime <= info.runfor){
 
 
-         //you aren't running anything, and it will run the first process
-         if(array[current].run == 1 && runningSomething == 0 ){
-          fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[current].name, array[current].burst );
-              //if process arrives earlier then burst amt
-               if(array[current].arrival <= 0 + info.quantnum){
-               shortGrab =  array[current+1].arrival - 1;
-               }
-                    //it goes for quantum number
-                     else{
-                        shortGrab = info.quantnum;
-                     }
-                         //calculate first execution
-                         executionTime = executionTime + shortGrab;
-                         array[current].burst = array[current].burst - shortGrab;
-                             //normal case
-                             if(shortGrab!=0){
-                              fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[current].name, array[current].burst );
-                             }
-                             if(shortGrab==0){
-                             //check later
-                             }
-          runningSomething = 1;
-         }
-
-         //new arrival
-         if(array[current].run == 1 && runningSomething == 1 && newArrival == 1  ){
-            executionTime = executionTime + 1;
-            fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[current].name, array[current].burst );
-            newArrival = 2;
-         }
-
-         //once all have arrived take first one that came in and keep going till empty >quantum
-         if(array[switchtoNext].run == 1 && runningSomething == 1 && counter==info.processCount && array[switchtoNext].burst > info.quantnum){
-         executionTime = executionTime + info.quantnum ;
-         array[switchtoNext].burst = array[switchtoNext].burst - info.quantnum;
-         fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[switchtoNext].name, array[switchtoNext].burst );
-                    //once all have arrived take first one that came in and keep going till empty <quantum
-                 if(array[switchtoNext].burst <= info.quantnum){
-                 executionTime = executionTime + array[switchtoNext].burst;
-                 array[switchtoNext].burst=0;
-                 array[switchtoNext].run=0;
-                 fprintf(output, "Time %d: %s finished\n",executionTime, array[switchtoNext].name );
-                 array[switchtoNext].turnaround = executionTime - array[switchtoNext].arrival;
-                 processTracker++;
-                 executionTime = executionTime - info.quantnum ;
-                 }
-         executionTime--;
-         printf("%d\n", array[switchtoNext].burst);
-
-         switchtoNext = switchtoNext + 1;
-
-         if(switchtoNext == info.processCount){
-            switchtoNext = 0;
-         }
-         }
-
-
-         //if there is 1 process left that needs to finish then..
-         if(processTracker==info.processCount-1){
+    for(i=0;i<info.processCount;i++){
+     //arrival of processes
+      if(array[i].arrival == executionTime && array[i].run == 0 && counter != info.processCount){
+            counter++;
+            fprintf(output, "Time %d: %s arrived\n", executionTime, array[j].name);
+            array[i].run = 1;
+            if(counter==1){
+            fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+            }
+            else{
             executionTime++;
-             while(array[switchtoNext].burst > 0){
-                 if(array[switchtoNext].burst> info.quantnum){
-                 executionTime = executionTime + info.quantnum ;
-                 array[switchtoNext].burst = array[switchtoNext].burst - info.quantnum;
-                 fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[switchtoNext].name, array[switchtoNext].burst );
-                 }
-                 if(array[switchtoNext].burst <= info.quantnum){
-                 executionTime = executionTime + array[switchtoNext].burst;
-                 array[switchtoNext].burst = 0;
-                 fprintf(output, "Time %d: %s finished\n",executionTime, array[switchtoNext].name );
-                 array[switchtoNext].turnaround = executionTime - array[switchtoNext].arrival;
-                 }
-             }
-         processTracker++;
+            fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+            }
+      }
+    }
+         //if processes are running
+     for(i=0;i<info.processCount;i++){
+        //if process is running and burst is greater then quantum
+        if(array[i].run == 1 && array[i].burst > info.quantnum){
+        executionTime = executionTime + info.quantnum;
+        array[i].burst = array[i].burst - info.quantnum;
+        fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
+        }
+        
+        //if less then finish it up.
+        if(array[i].burst<=info.quantnum && array[i].run == 1){
+                executionTime = executionTime + array[i].burst;
+            fprintf(output, "Time %d: %s finished\n", executionTime, array[i].name);
+            array[i].turnaround = executionTime - array[i].arrival;
+            array[i].run = 0;
+            flag = 1;
+        }
 
-         }
 
-         if(processTracker==info.quantnum && executionTime < info.runfor){
-            fprintf(output, "Time %d: Idle\n", executionTime);
-            idleToggle = 1;
-         }
+    }
+    //toggle the idle if the last process in list is empty, doesn't look right...
+    if(counter == info.processCount && array[info.quantnum-1].burst == 0){
+        fprintf(output, "Time %d: Idle\n");
+        idleToggle = 1;
+    }
+//kind of don't understand why i needed this trying to figure a way around it.
+    if(counter>=info.quantnum){
+            executionTime--;
+        }
+        
+//next instruction
+    executionTime++;
 
-         executionTime++;
-
-         if(idleToggle == 1 || executionTime >= info.runfor || processTracker == info.quantnum){
+    //if execution time is hit or idle is toggled..then end
+    if(idleToggle == 1 || executionTime >= info.runfor){
             fprintf(output, "Finished at time %d\n\n", executionTime);
 
-             // print the wait times
+            // print the wait times
             printWaitTimes(output, array, size);
 
             // go back to main
             return;
-         }
+    }
 
-    }//end time count
+
+
+
+  }// end while;
 }//end functionality
 
 
