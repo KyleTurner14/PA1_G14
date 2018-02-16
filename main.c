@@ -342,24 +342,21 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 }
 
 // Implementation of round robin, outputs to processes.out
-// Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
 
 int i = 0, j = 0, runningSomething = 0, instruction = 0, current = 0, newArrival = 0, processCounter = 0;
 int idleToggle = 0;
-	
     //pre-fetched data
     fprintf(output, "%d processes\nUsing Round-Robin\nQuantum %d\n\n", info.processCount, info.quantnum );
 
     while(instruction <= info.runfor){
 
-            //arriving inbound
+            //arrive time
             if(array[i].arrival == instruction){
             fprintf(output, "Time %d: %s arrived\n", instruction, array[i].name);
             newArrival = 1;
             i++;
             }
-
 
 
             //processArrived but nothing is running yet.
@@ -409,7 +406,7 @@ int idleToggle = 0;
              fprintf(output, "Time %d: %s selected (burst %d)\n", instruction, array[current].name, array[current].burst);
 
 
-             //finishing a process & adds counter for when all processes have gone through.
+             //finishing a process & adds counter.
              if(array[current].burst <= info.quantnum){
                 instruction = instruction + array[current].burst;
                 fprintf(output, "Time %d: %s Finished\n", instruction, array[current].name);
@@ -419,10 +416,8 @@ int idleToggle = 0;
                 instruction = instruction - info.quantnum;
                 processCounter++;
              }
-	     //balances instruction at bottom.
              instruction--;
 		     
-	     //loops. 
              if(current  != info.processCount){
                 current = current + 1;
              }
@@ -430,9 +425,9 @@ int idleToggle = 0;
                 current = 0;
              }
 		     
-             }//end if
+             }
 	    
-	    //its idle or process is ended.
+	    //idle time.
             if(idleToggle == 1 || instruction == info.runfor){
                fprintf(output, "Finished at time %d\n\n", instruction);
 
@@ -443,7 +438,7 @@ int idleToggle = 0;
             return;
             }
 
-	    //if process is idle --> adds 1 and info because they were subtracted previously.
+
             if(processCounter==2 && (instruction + 1 + info.quantnum) <=info.runfor){
                 instruction = instruction + 1 + info.quantnum;
                 fprintf(output, "Time %d: Idle\n", instruction);
@@ -452,8 +447,6 @@ int idleToggle = 0;
 
             instruction++;
   }// end while;
-
-
 }//end functionality
 
 
