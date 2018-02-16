@@ -202,10 +202,14 @@ void firstComeFirstServe(FILE*output, information info, processes*array, int siz
     // For the duration, try to run the FIFO
     while(countdown <= info.runfor){
         
+        // check for arrival
         if(array[i].arrival == countdown){
-            fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
-            i++;
             
+            // check if the following are the same arrival time.
+            while(array[i].arrival == countdown){
+                fprintf(output, "Time %d: %s arrived\n", countdown, array[i].name);
+                i++;
+            }
         }
         
         // Say this process is running now
