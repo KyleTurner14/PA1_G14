@@ -38,7 +38,7 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size);
 void roundRobin(FILE*output, information info, processes*array, int size);
 void printWaitTimes(FILE*output, processes*array, int size);
 
-void checkArrivalTimes(FILE*output, processes*array, information info, int time, int doOnce);
+void checkArrivalTimes(FILE*output, processes*array, information info);
 
 int helper_reportWinner( FILE*output, information info, processes* array, int timer, int oldWinner );
 
@@ -361,21 +361,21 @@ for(j=0; j<info.processCount; j++){
     cpyBurst[j] = array[j].burst;
 }
 
+    checkArrivalTimes(output,array,info);
+
+    fprintf(output, "\nBeing Algorithm:\n");
 
     //while executing
     while(executionTime <= info.runfor){
     runningSomething = 0;
-    checkArrivalTimes(output,array,info,executionTime,1);
 
     for(i=0;i<info.processCount;i++){
 
     if(array[i].arrival <= executionTime && array[i].run == 0 && array[i].burst != 0){
-   //  fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
      array[i].run = 1;
      runningSomething = 1;
     }
 
-    checkArrivalTimes(output,array,info,executionTime,1);
 
 
     if(array[i].burst <= info.quantnum && array[i].run == 1){
@@ -490,22 +490,16 @@ void sortByName(processes*array, int size){
 }
 
 
-void checkArrivalTimes(FILE*output, processes*array, information info, int time, int doOnce){
-int i=0,j=0, flag[info.processCount];
+void checkArrivalTimes(FILE*output, processes*array, information info){
+int i=0,j=0;
 
-    if( doOnce == 1){
-    for(j=0;j<info.processCount;j++){
-        flag[j]= 1;
-    }
-    
-    doOnce = 0;
-    }
 
 
         for(i=0;i<info.processCount;i++){
-                if(time == array[i].arrival && flag[i] == 1 ){
-                    fprintf(output, "Time %d: %s arrived\n", time, array[i].name);
-                    flag[i] = 17;
+               for(j=0;j<info.runfor;j++){
+                    if(array[i].arrival==j)
+                    fprintf(output, "At time %d, %s will arrive.\n", j, array[i].name);
+
                 }
         }
 }
