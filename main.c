@@ -38,6 +38,8 @@ void shortestJobFirst(FILE*output, information info, processes*array, int size);
 void roundRobin(FILE*output, information info, processes*array, int size);
 void printWaitTimes(FILE*output, processes*array, int size);
 
+void checkArrivalTimes(FILE*output, processes*array, information info, int time, int doOnce);
+
 int helper_reportWinner( FILE*output, information info, processes* array, int timer, int oldWinner );
 
 int main(int argc, const char * argv[]) {
@@ -349,7 +351,7 @@ int helper_reportWinner( FILE*output, information info, processes* array, int ti
 
 // Implementation of round robin, outputs to processes.out
 void roundRobin(FILE*output, information info, processes*array, int size){
-int i = 0, j = 0,runningSomething = 0, executionTime = 0, processCounter = 0, idleToggle = 0;
+int i = 0, j = 0,k = 0,runningSomething = 0, executionTime = 0, processCounter = 0, idleToggle = 0;
 int cpyBurst[info.processCount];
 
     //pre-fetched data
@@ -363,11 +365,9 @@ for(j=0; j<info.processCount; j++){
     //while executing
     while(executionTime <= info.runfor){
     runningSomething = 0;
-    for(i=0;i<info.processCount;i++){
+    checkArrivalTimes(output,array,info,executionTime,1);
 
-    if(array[i].arrival == executionTime){
-        fprintf(output, "Time %d: %s arrived\n", executionTime, array[i].name);
-    }
+    for(i=0;i<info.processCount;i++){
 
     if(array[i].arrival <= executionTime && array[i].run == 0 && array[i].burst != 0){
    //  fprintf(output, "Time %d: %s selected (burst %d)\n", executionTime, array[i].name, array[i].burst);
@@ -375,8 +375,12 @@ for(j=0; j<info.processCount; j++){
      runningSomething = 1;
     }
 
+    checkArrivalTimes(output,array,info,executionTime,1);
+
+
     if(array[i].burst <= info.quantnum && array[i].run == 1){
     fprintf(output, "Time %d: %s selected (burst %d)\n",executionTime, array[i].name, array[i].burst );
+
     executionTime = executionTime + array[i].burst;
     array[i].burst = 0;
     fprintf(output, "Time %d: %s finished.\n",executionTime, array[i].name, array[i].burst );
@@ -421,8 +425,11 @@ idleToggle = 1;
 
 
 if(runningSomething != 1){
+
 executionTime++;
+
 }
+
 
     }
     }//end time count
@@ -480,4 +487,25 @@ void sortByName(processes*array, int size){
     sortByName(array, i);
     sortByName(array + i, size - i);
     
+}
+
+
+void checkArrivalTimes(FILE*output, processes*array, information info, int time, int doOnce){
+int i=0,j=0, flag[info.processCount];
+
+    if( doOnce == 1){
+    for(j=0;j<info.processCount;j++){
+        flag[j]= 1;
+    }
+    
+    doOnce = 0;
+    }
+
+
+        for(i=0;i<info.processCount;i++){
+                if(time == array[i].arrival && flag[i] == 1 ){
+                    fprintf(output, "Time %d: %s arrived\n", time, array[i].name);
+                    flag[i] = 17;
+                }
+        }
 }
