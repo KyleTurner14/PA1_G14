@@ -403,7 +403,7 @@ for(j=0; j<info.processCount; j++){
     }
 
 //if idle
-if(idleToggle == 1){
+if(idleToggle == 1 || executionTime >= info.runfor){
 fprintf(output, "Finished at time %d\n\n", executionTime);
 
  // print the wait times
@@ -492,9 +492,6 @@ void sortByName(processes*array, int size){
 
 void checkArrivalTimes(FILE*output, processes*array, information info){
 int i=0,j=0;
-
-
-
         for(i=0;i<info.processCount;i++){
                for(j=0;j<info.runfor;j++){
                     if(array[i].arrival==j)
